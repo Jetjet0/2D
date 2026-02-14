@@ -1,12 +1,14 @@
 package mainpackage;
 
+import config.UserSession;
 import config.cconfig;
-import internapage.loginpage;
 import internapage.registerpage;
-import java.sql.*;
-import javax.swing.JOptionPane;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import javax.swing.JOptionPane;
+import admin.dash;
+import costumer.dashc;
 
 
 /*
@@ -162,7 +164,7 @@ public class mainpage extends javax.swing.JFrame {
             }
         });
         jPanel1.add(jButton2);
-        jButton2.setBounds(420, 550, 270, 30);
+        jButton2.setBounds(420, 550, 260, 30);
 
         jLabel8.setFont(new java.awt.Font("Times New Roman", 3, 14)); // NOI18N
         jLabel8.setForeground(new java.awt.Color(255, 255, 255));
@@ -198,60 +200,7 @@ public class mainpage extends javax.swing.JFrame {
     }//GEN-LAST:event_jTextField1ActionPerformed
 
     private void jButton1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton1MouseClicked
-       
-    String email = jTextField2.getText().trim();
-    String password = jTextField1.getText().trim();
-
-    // Validation
-    if (email.isEmpty() || password.isEmpty()) {
-        JOptionPane.showMessageDialog(this,
-                "Email and Password are required!",
-                "Login Error",
-                JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-
-    if (!email.contains("@") || !email.contains(".")) {
-        JOptionPane.showMessageDialog(this,
-                "Invalid Email format!",
-                "Login Error",
-                JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-
-    // Hash entered password
-    String hashedPassword = cconfig.hashPassword(password);
-
-    String sql = "SELECT * FROM tbl_users WHERE email = ? AND password = ?";
-
-    try (Connection conn = cconfig.connectDB();
-         PreparedStatement pst = conn.prepareStatement(sql)) {
-
-        pst.setString(1, email);
-        pst.setString(2, hashedPassword);
-
-        ResultSet rs = pst.executeQuery();
-
-        if (rs.next()) {
-            // ✅ USER EXISTS → LOGIN OK
-            JOptionPane.showMessageDialog(this, "Login Successful!");
-            this.dispose();
-            new loginpage().setVisible(true);
-
-        } else {
-            // ❌ NOT REGISTERED or WRONG PASSWORD
-            JOptionPane.showMessageDialog(this,
-                    "Account not found or wrong password!\nPlease register first.",
-                    "Login Failed",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(this,
-                "Database error: " + e.getMessage(),
-                "Error",
-                JOptionPane.ERROR_MESSAGE);
-    }
+     
     }//GEN-LAST:event_jButton1MouseClicked
 
     private void jButton2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton2MouseClicked
@@ -268,6 +217,82 @@ public class mainpage extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
+       String input = jTextField2.getText().trim();   // email or admin username
+    String password = jTextField1.getText().trim();
+
+    if (input.isEmpty() || password.isEmpty()) {
+        JOptionPane.showMessageDialog(this,
+                "Email/Username and Password are required!",
+                "Login Error",
+                JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    boolean isAdminLogin = input.equalsIgnoreCase("admin");
+    String hashedPassword = cconfig.hashPassword(password);
+
+    try (Connection conn = cconfig.connectDB()) {
+
+        PreparedStatement pst;
+        String sql;
+
+        if (isAdminLogin) {
+            // Admin login: check role and password
+            sql = "SELECT username, email, role FROM tbl_users "
+                + "WHERE username = ? AND password = ? AND role = 'ADMIN'";
+            pst = conn.prepareStatement(sql);
+            pst.setString(1, input); // admin username
+            pst.setString(2, hashedPassword);
+        } else {
+            // Normal user login: use email
+            sql = "SELECT username, email, role FROM tbl_users "
+                + "WHERE email = ? AND password = ?";
+            pst = conn.prepareStatement(sql);
+            pst.setString(1, input); // user email
+            pst.setString(2, hashedPassword);
+        }
+
+        ResultSet rs = pst.executeQuery();
+
+        if (rs.next()) {
+            // Save logged-in user to session
+            UserSession.username = rs.getString("username"); // must match your table column
+            UserSession.email    = rs.getString("email");
+            UserSession.role     = rs.getString("role");
+
+            if (UserSession.role.equalsIgnoreCase("PENDING")) {
+                JOptionPane.showMessageDialog(this,
+                        "Your account is pending approval by the Admin.\nPlease wait.",
+                        "Pending Approval",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            JOptionPane.showMessageDialog(this,
+                    "Login Successful!\nRole: " + UserSession.role);
+
+            this.dispose();
+
+            if (UserSession.role.equalsIgnoreCase("ADMIN")) {
+                new dash().setVisible(true);
+            } else {
+                new dashc().setVisible(true);
+            }
+
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid login credentials!",
+                    "Login Failed",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this,
+                "Database error occurred: " + e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+    }
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed

@@ -161,11 +161,11 @@ public class registerpage extends javax.swing.JFrame {
             }
         });
         jPanel1.add(jButton2);
-        jButton2.setBounds(410, 580, 240, 40);
+        jButton2.setBounds(430, 580, 230, 40);
 
         jButton3.setBackground(new java.awt.Color(0, 0, 0));
         jButton3.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
-        jButton3.setText("REGISTERED");
+        jButton3.setText("REGISTER");
         jButton3.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 5, true));
         jButton3.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -215,76 +215,82 @@ public class registerpage extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton3MouseClicked
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-         String username = jTextField2.getText().trim();   // User name
-    String email = jTextField1.getText().trim();      // User email
-    String password = jTextField5.getText().trim();   // Password
+          String username = jTextField2.getText().trim();
+    String email = jTextField1.getText().trim().toLowerCase(); // normalize email
+    String password = jTextField5.getText().trim();
 
-    // Validation
     if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
         JOptionPane.showMessageDialog(this,
-            "Please fill all fields!",
-            "Registration Error",
-            JOptionPane.ERROR_MESSAGE);
+                "Please fill all fields!",
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
         return;
     }
 
     if (!email.contains("@") || !email.contains(".")) {
         JOptionPane.showMessageDialog(this,
-            "Wrong email format! Email must contain '@' and '.'",
-            "Email Format Error",
-            JOptionPane.ERROR_MESSAGE);
+                "Invalid email format!",
+                "Email Error",
+                JOptionPane.ERROR_MESSAGE);
         return;
     }
 
     if (password.length() < 6) {
         JOptionPane.showMessageDialog(this,
-            "Password must be at least 6 characters",
-            "Password Too Short",
-            JOptionPane.WARNING_MESSAGE);
+                "Password must be at least 6 characters!",
+                "Password Error",
+                JOptionPane.WARNING_MESSAGE);
         return;
     }
-     String hashedPassword = cconfig.hashPassword(password);
 
-    // Insert into database
+    if (username.equalsIgnoreCase("admin")) {
+        JOptionPane.showMessageDialog(this,
+                "Username 'admin' is reserved!",
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
     try (Connection conn = cconfig.connectDB()) {
 
         // Check if email already exists
-        String checkSql = "SELECT * FROM tbl_users WHERE email = ?";
-        PreparedStatement pstCheck = conn.prepareStatement(checkSql);
+        PreparedStatement pstCheck = conn.prepareStatement(
+                "SELECT COUNT(*) FROM tbl_users WHERE LOWER(email) = ?");
         pstCheck.setString(1, email);
         ResultSet rs = pstCheck.executeQuery();
-        if (rs.next()) {
+        if (rs.next() && rs.getInt(1) > 0) {
             JOptionPane.showMessageDialog(this,
-                "Email already registered!",
-                "Registration Error",
-                JOptionPane.ERROR_MESSAGE);
+                    "Email already registered!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Insert user
-        String insertSql = "INSERT INTO tbl_users (username, email, password) VALUES (?, ?, ?)";
-        PreparedStatement pst = conn.prepareStatement(insertSql);
+        // Insert new user as PENDING
+        PreparedStatement pst = conn.prepareStatement(
+                "INSERT INTO tbl_users (username, email, password, role) VALUES (?, ?, ?, 'PENDING')");
         pst.setString(1, username);
         pst.setString(2, email);
-        pst.setString(3, password);  // You can replace with cconfig.hashPassword(password) if hashing
+        pst.setString(3, cconfig.hashPassword(password));
         pst.executeUpdate();
 
         JOptionPane.showMessageDialog(this,
-            "Registration Successful!\nWelcome, " + username + "!",
-            "Success",
-            JOptionPane.INFORMATION_MESSAGE);
+                "Registration successful! Pending Admin approval.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE);
 
-        // Go to main page
         this.dispose();
-        mainpage main = new mainpage();
-        main.setVisible(true);
+        new mainpage().setVisible(true);
 
     } catch (Exception e) {
+        e.printStackTrace();
         JOptionPane.showMessageDialog(this,
-            "Database Error: " + e.getMessage(),
-            "Error",
-            JOptionPane.ERROR_MESSAGE);
+                "Database error occurred!",
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
     }
+
+
 
     }//GEN-LAST:event_jButton3ActionPerformed
 
