@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 package internapage;
-
+ 
 import config.cconfig;
 import javax.swing.JOptionPane;
 import mainpackage.mainpage;
@@ -22,6 +22,7 @@ public class registerpage extends javax.swing.JFrame {
      * Creates new form registerpage
      */
     public registerpage() {
+         
         initComponents();
     }
 
@@ -218,7 +219,7 @@ public class registerpage extends javax.swing.JFrame {
           String username = jTextField2.getText().trim();
     String email = jTextField1.getText().trim().toLowerCase(); // normalize email
     String password = jTextField5.getText().trim();
-
+ 
     if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
         JOptionPane.showMessageDialog(this,
                 "Please fill all fields!",
@@ -226,7 +227,7 @@ public class registerpage extends javax.swing.JFrame {
                 JOptionPane.ERROR_MESSAGE);
         return;
     }
-
+ 
     if (!email.contains("@") || !email.contains(".")) {
         JOptionPane.showMessageDialog(this,
                 "Invalid email format!",
@@ -234,7 +235,7 @@ public class registerpage extends javax.swing.JFrame {
                 JOptionPane.ERROR_MESSAGE);
         return;
     }
-
+ 
     if (password.length() < 6) {
         JOptionPane.showMessageDialog(this,
                 "Password must be at least 6 characters!",
@@ -242,7 +243,7 @@ public class registerpage extends javax.swing.JFrame {
                 JOptionPane.WARNING_MESSAGE);
         return;
     }
-
+ 
     if (username.equalsIgnoreCase("admin")) {
         JOptionPane.showMessageDialog(this,
                 "Username 'admin' is reserved!",
@@ -250,9 +251,9 @@ public class registerpage extends javax.swing.JFrame {
                 JOptionPane.ERROR_MESSAGE);
         return;
     }
-
+ 
     try (Connection conn = cconfig.connectDB()) {
-
+ 
         // Check if email already exists
         PreparedStatement pstCheck = conn.prepareStatement(
                 "SELECT COUNT(*) FROM tbl_users WHERE LOWER(email) = ?");
@@ -265,23 +266,23 @@ public class registerpage extends javax.swing.JFrame {
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
-
+ 
         // Insert new user as PENDING
         PreparedStatement pst = conn.prepareStatement(
-                "INSERT INTO tbl_users (username, email, password, role) VALUES (?, ?, ?, 'PENDING')");
+                "INSERT INTO tbl_users (username, email, password, role, status) VALUES (?, ?, ?, 'PENDING', 'Unapprove')");
         pst.setString(1, username);
         pst.setString(2, email);
         pst.setString(3, cconfig.hashPassword(password));
         pst.executeUpdate();
-
+ 
         JOptionPane.showMessageDialog(this,
                 "Registration successful! Pending Admin approval.",
                 "Success",
                 JOptionPane.INFORMATION_MESSAGE);
-
+ 
         this.dispose();
         new mainpage().setVisible(true);
-
+ 
     } catch (Exception e) {
         e.printStackTrace();
         JOptionPane.showMessageDialog(this,

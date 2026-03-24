@@ -1,4 +1,4 @@
-/*
+    /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -6,6 +6,7 @@
 package admin;
 import config.cconfig;
 import javax.swing.JOptionPane;
+import config.UserSession;
 /**
  *
  * @author USER33
@@ -16,10 +17,11 @@ public class NewJFrame extends javax.swing.JFrame {
      * Creates new form NewJFrame
      */
     public NewJFrame() {
+         if (!UserSession.requireLogin(this)) return;
        initComponents();
         loadUsers();
 }
-
+ 
 // Create a helper method
 private void loadUsers() {
     try {
@@ -56,6 +58,8 @@ private void loadUsers() {
         jTextField1 = new javax.swing.JTextField();
         jPanel4 = new javax.swing.JPanel();
         jButton1 = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
+        jButton5 = new javax.swing.JButton();
         jToggleButton1 = new javax.swing.JToggleButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
@@ -63,6 +67,7 @@ private void loadUsers() {
         jButton2 = new javax.swing.JButton();
         jTextField2 = new javax.swing.JTextField();
         jToggleButton3 = new javax.swing.JToggleButton();
+        jButton3 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -104,8 +109,29 @@ private void loadUsers() {
         });
         jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 140, 170, 30));
 
+        jButton4.setText("Books");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 250, 150, 30));
+
+        jButton5.setText("Sales");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton5, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 320, 150, 30));
+
         jToggleButton1.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
-        jToggleButton1.setText("Login Log");
+        jToggleButton1.setText("Settings");
+        jToggleButton1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jToggleButton1MouseClicked(evt);
+            }
+        });
         jPanel4.add(jToggleButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 630, 140, 30));
 
         jPanel1.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 390, 670));
@@ -178,6 +204,14 @@ private void loadUsers() {
         });
         jPanel1.add(jToggleButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(970, 100, 70, 30));
 
+        jButton3.setText("Delete");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+        jPanel1.add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 630, -1, -1));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -225,17 +259,17 @@ private void loadUsers() {
         JOptionPane.showMessageDialog(this, "Please select a user to approve.", "Warning", JOptionPane.WARNING_MESSAGE);
         return;
     }
-
+ 
     // Get username from the selected row (first column)
     String username = jTable1.getValueAt(selectedRow, 0).toString();
-
+ 
     try {
         // Update role in database to approved
-        String sql = "UPDATE tbl_users SET role='approved' WHERE username=?";
+        String sql = "UPDATE tbl_users SET role='approved', status='Active' WHERE username=?";
         new cconfig().addRecord(sql, username);
-
+ 
         JOptionPane.showMessageDialog(this, "User approved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-
+ 
         // Reload all users (not just pending)
         loadUsers();
     } catch (Exception e) {
@@ -250,7 +284,7 @@ private void loadUsers() {
 
     private void jToggleButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton3ActionPerformed
         // TODO add your handling code here:
-        String keyword = jTextField2.getText().trim();
+         String keyword = jTextField2.getText().trim();
     if(keyword.isEmpty()) {
         loadUsers(); // reload all users if search is empty
     } else {
@@ -260,38 +294,113 @@ private void loadUsers() {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
-         int selectedRow = jTable1.getSelectedRow();
-
-    if (selectedRow == -1) {
-        JOptionPane.showMessageDialog(this, "Please select a user to deactivate.", "Warning", JOptionPane.WARNING_MESSAGE);
-        return;
-    }
-
-    String username = jTable1.getValueAt(selectedRow, 0).toString();
-
-    int confirm = JOptionPane.showConfirmDialog(
-            this,
-            "Are you sure you want to deactivate this user?",
-            "Confirm",
-            JOptionPane.YES_NO_OPTION
-    );
-
-    if (confirm == JOptionPane.YES_OPTION) {
-        try {
-            String sql = "UPDATE tbl_users SET status='deactive' WHERE username=?";
-            new cconfig().addRecord(sql, username);
-
-            JOptionPane.showMessageDialog(this, "User status changed to deactive!", "Success", JOptionPane.INFORMATION_MESSAGE);
-
-            loadUsers(); // refresh table
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to deactivate user.", "Error", JOptionPane.ERROR_MESSAGE);
+        int selectedRow = jTable1.getSelectedRow();
+ 
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a user to deactivate.",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
         }
-    }
+ 
+        String username = jTable1.getValueAt(selectedRow, 0).toString();
+ 
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Deactivate user \"" + username + "\"?",
+                "Confirm Deactivate",
+                JOptionPane.YES_NO_OPTION
+        );
+ 
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                String sql = "UPDATE tbl_users SET status='Unapprove' WHERE username=?";
+                new cconfig().addRecord(sql, username);
+ 
+                JOptionPane.showMessageDialog(this,
+                        "User deactivated successfully.",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+ 
+                loadUsers();
+ 
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Failed to deactivate user.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
     
     }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+         int selectedRow = jTable1.getSelectedRow();
+ 
+    // Check if a row is selected
+    if (selectedRow == -1) {
+        JOptionPane.showMessageDialog(this,
+                "Please select a user to delete.",
+                "Warning",
+                JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+ 
+    // Get username from first column (column 0)
+    String username = jTable1.getValueAt(selectedRow, 0).toString();
+ 
+    // Confirm before deleting
+    int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to delete this user?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION
+    );
+ 
+    if (confirm == JOptionPane.YES_OPTION) {
+        try {
+            String sql = "DELETE FROM tbl_users WHERE username=?";
+            new cconfig().addRecord(sql, username);
+ 
+            JOptionPane.showMessageDialog(this,
+                    "User deleted successfully!",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+ 
+            loadUsers(); // Refresh table after delete
+ 
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Failed to delete user.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+        
+    }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        // TODO add your handling code here:
+        adbok lp = new adbok();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton4ActionPerformed
+
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        // TODO add your handling code here:
+        sales lp = new sales();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton5ActionPerformed
+
+    private void jToggleButton1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jToggleButton1MouseClicked
+        settingss lp = new settingss();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jToggleButton1MouseClicked
 
     /**
      * @param args the command line arguments
@@ -331,6 +440,9 @@ private void loadUsers() {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel4;

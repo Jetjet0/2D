@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import javax.swing.JOptionPane;
 import mainpackage.mainpage;
 
+
 /**
  *
  * @author USER33
@@ -22,26 +23,26 @@ public class setc extends javax.swing.JFrame {
      * Creates new form setc
      */
     public setc() {
-        initComponents();
+         if (!UserSession.requireLogin(this)) return;
         initComponents();
         loadUserData();
         lockFields();
     }
      private void loadUserData() {
         try (Connection con = cconfig.connectDB()) {
-
+ 
             String sql = "SELECT username, email, password FROM tbl_users WHERE username = ?";
             PreparedStatement pst = con.prepareStatement(sql);
             pst.setString(1, UserSession.username);
-
+ 
             ResultSet rs = pst.executeQuery();
-
+ 
             if (rs.next()) {
                 jTextField2.setText(rs.getString("username"));
                 jTextField3.setText(rs.getString("email"));
-                jPasswordField1.setText(rs.getString("password"));
+                jPasswordField1.setText("********"); // password is not shown or editable
             }
-
+ 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error loading user data: " + e.getMessage());
         }
@@ -54,7 +55,7 @@ public class setc extends javax.swing.JFrame {
  private void unlockFields() {
         jTextField2.setEditable(true);
         jTextField3.setEditable(true);
-        jPasswordField1.setEditable(true);
+        // password stays non-editable always
     }
 
 
@@ -72,8 +73,8 @@ public class setc extends javax.swing.JFrame {
         jPanel4 = new javax.swing.JPanel();
         jLabel5 = new javax.swing.JLabel();
         jToggleButton1 = new javax.swing.JToggleButton();
+        jButton6 = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
-        jButton5 = new javax.swing.JButton();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jTextField2 = new javax.swing.JTextField();
@@ -112,13 +113,16 @@ public class setc extends javax.swing.JFrame {
         });
         jPanel3.add(jToggleButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 490, 140, 30));
 
-        jButton1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jButton1.setText("View Book Available");
-        jPanel3.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 160, 160, 40));
+        jButton6.setText("Books");
+        jButton6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton6ActionPerformed(evt);
+            }
+        });
+        jPanel3.add(jButton6, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 270, 150, 30));
 
-        jButton5.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jButton5.setText("View Borrowed Book");
-        jPanel3.add(jButton5, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 230, 160, 40));
+        jButton1.setText("Return");
+        jPanel3.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 340, 150, 30));
 
         jPanel2.add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 340, 550));
 
@@ -233,23 +237,21 @@ public class setc extends javax.swing.JFrame {
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         // TODO add your handling code here:
-         try (Connection con = cconfig.connectDB()) {
-
-            String sql = "UPDATE tbl_users SET username = ?, email = ?, password = ? WHERE username = ?";
+          try (Connection con = cconfig.connectDB()) {
+ 
+            String sql = "UPDATE tbl_users SET username = ?, email = ? WHERE username = ?";
             PreparedStatement pst = con.prepareStatement(sql);
-
+ 
             String newUsername = jTextField2.getText().trim();
             String newEmail = jTextField3.getText().trim();
-            String newPassword = new String(jPasswordField1.getPassword()).trim();
             String oldUsername = UserSession.username;
-
+ 
             pst.setString(1, newUsername);
             pst.setString(2, newEmail);
-            pst.setString(3, newPassword);
-            pst.setString(4, oldUsername);
-
+            pst.setString(3, oldUsername);
+ 
             int rowsUpdated = pst.executeUpdate();
-
+ 
             if (rowsUpdated > 0) {
                 JOptionPane.showMessageDialog(this, "Profile updated successfully!");
                 UserSession.username = newUsername;
@@ -257,7 +259,7 @@ public class setc extends javax.swing.JFrame {
             } else {
                 JOptionPane.showMessageDialog(this, "Update failed. User not found.");
             }
-
+ 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error updating profile: " + e.getMessage());
         }
@@ -269,11 +271,7 @@ public class setc extends javax.swing.JFrame {
         
         UserSession.clear();
         new mainpage().setVisible(true);
-
-        java.awt.Window win = javax.swing.SwingUtilities.getWindowAncestor(this);
-        if (win != null) {
-            win.dispose();
-        }
+        this.dispose();
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jToggleButton1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jToggleButton1MouseClicked
@@ -281,6 +279,13 @@ public class setc extends javax.swing.JFrame {
         lp.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_jToggleButton1MouseClicked
+
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        // TODO add your handling code here:
+        bok lp = new bok();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton6ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -322,7 +327,7 @@ public class setc extends javax.swing.JFrame {
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
+    private javax.swing.JButton jButton6;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

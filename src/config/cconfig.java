@@ -19,6 +19,7 @@ import net.proteanit.sql.DbUtils;
  */
 public class cconfig {
     
+    
     //Connection Method to SQLITE
 public static Connection connectDB() {
        Connection con = null;
@@ -34,17 +35,24 @@ public static Connection connectDB() {
     
 public void addRecord(String sql, Object... values) {
     
-   try (Connection conn = connectDB();
+  try (Connection conn = connectDB();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
         for (int i = 0; i < values.length; i++) {
-            pstmt.setObject(i + 1, values[i]);
+
+            if (values[i] instanceof byte[]) {
+                pstmt.setBytes(i + 1, (byte[]) values[i]); // VERY IMPORTANT FOR IMAGE
+            } else {
+                pstmt.setObject(i + 1, values[i]);
+            }
         }
 
         pstmt.executeUpdate();
         System.out.println("Record added successfully!");
+
     } catch (SQLException e) {
         System.out.println("Error adding record: " + e.getMessage());
+        e.printStackTrace();
     }
 }
 public String authenticate(String sql, Object... values) {
@@ -96,6 +104,21 @@ public static String hashPassword(String password) {
         return hexString.toString();
     } catch (java.security.NoSuchAlgorithmException e) {
         System.out.println("Error hashing password: " + e.getMessage());
+        return null;
+    }
+}
+public ResultSet getResultSet(String sql, Object... values) {
+    try {
+        Connection conn = connectDB();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+
+        for (int i = 0; i < values.length; i++) {
+            pstmt.setObject(i + 1, values[i]);
+        }
+
+        return pstmt.executeQuery(); // keep connection open for reading
+    } catch (Exception e) {
+        System.out.println("Error executing query: " + e.getMessage());
         return null;
     }
 }

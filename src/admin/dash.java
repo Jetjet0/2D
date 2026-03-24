@@ -5,6 +5,8 @@
  */
 package admin;
 
+import config.UserSession;
+
 /**
  *
  * @author USER33
@@ -15,6 +17,7 @@ public class dash extends javax.swing.JFrame {
      * Creates new form dash
      */
     public dash() {
+         if (!UserSession.requireLogin(this)) return;
         initComponents();
     }
 
@@ -86,9 +89,19 @@ public class dash extends javax.swing.JFrame {
         jPanel4.add(jToggleButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 630, 140, 30));
 
         jButton2.setText("Books");
-        jPanel4.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 270, 150, 30));
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 280, 150, 30));
 
         jButton3.setText("Sales");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
         jPanel4.add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 330, 150, 30));
 
         jPanel1.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 360, 680));
@@ -129,6 +142,20 @@ public class dash extends javax.swing.JFrame {
        lp.setVisible(true);
        this.dispose();
     }//GEN-LAST:event_jToggleButton1MouseClicked
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // TODO add your handling code here:
+        adbok lp = new adbok();
+       lp.setVisible(true);
+       this.dispose();
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        // TODO add your handling code here:
+        sales lp = new sales();
+       lp.setVisible(true);
+       this.dispose();
+    }//GEN-LAST:event_jButton3ActionPerformed
 
     /**
      * @param args the command line arguments

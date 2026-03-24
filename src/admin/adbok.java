@@ -4,19 +4,119 @@
  * and open the template in the editor.
  */
 package admin;
+import config.UserSession;
+import config.cconfig;
+import javax.swing.*;
+import java.awt.*;
+import java.sql.ResultSet;
+import java.sql.PreparedStatement;
+import java.sql.Connection;
 
 /**
  *
  * @author USER33
  */
 public class adbok extends javax.swing.JFrame {
-
+private JPanel jPanel3;
+private int selectedBookId = -1;
     /**
      * Creates new form adbok
      */
-    public adbok() {
+      public adbok() {
+        if (!UserSession.requireLogin(this)) return;
+ 
         initComponents();
+ 
+        jPanel3 = new JPanel();
+        jPanel3.setLayout(new GridLayout(0, 2, 30, 30));
+        jPanel3.setBackground(Color.WHITE);
+ 
+        JScrollPane scrollPane = new JScrollPane(jPanel3);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+ 
+        jPanel1.add(scrollPane,
+                new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 90, 680, 550));
+ 
+        loadBooks();
     }
+     private void loadBooks() {
+     try {
+ 
+            jPanel3.removeAll();
+ 
+            Connection conn = cconfig.connectDB();
+            PreparedStatement pst = conn.prepareStatement("SELECT * FROM tbl_books");
+            ResultSet rs = pst.executeQuery();
+ 
+            while (rs.next()) {
+ 
+                int id = rs.getInt("bo_id");
+                String title = rs.getString("title");
+                int price = rs.getInt("price");
+                byte[] imageBytes = rs.getBytes("picture");
+ 
+                JPanel bookPanel = new JPanel(new BorderLayout());
+                bookPanel.setPreferredSize(new Dimension(260, 430));
+                bookPanel.setBackground(Color.WHITE);
+                bookPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+ 
+                JLabel picLabel = new JLabel();
+                picLabel.setHorizontalAlignment(JLabel.CENTER);
+                picLabel.setPreferredSize(new Dimension(250, 375));
+ 
+                if (imageBytes != null) {
+                    picLabel.setIcon(new ImageIcon(imageBytes));
+                }
+ 
+                JLabel textLabel = new JLabel(
+                        "<html><center>"
+                                + title +
+                                "<br>₱" + price +
+                                "</center></html>",
+                        JLabel.CENTER
+                );
+ 
+                textLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
+ 
+                bookPanel.add(picLabel, BorderLayout.CENTER);
+                bookPanel.add(textLabel, BorderLayout.SOUTH);
+ 
+                // ✅ CLICK TO SELECT
+                bookPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseClicked(java.awt.event.MouseEvent evt) {
+ 
+                        selectedBookId = id;
+ 
+                        for (Component comp : jPanel3.getComponents()) {
+                            ((JPanel) comp).setBorder(
+                                    BorderFactory.createLineBorder(Color.GRAY));
+                        }
+ 
+                        bookPanel.setBorder(
+                                BorderFactory.createLineBorder(Color.BLUE, 3));
+                    }
+                });
+ 
+                jPanel3.add(bookPanel);
+            }
+ 
+            rs.close();
+            pst.close();
+            conn.close();
+ 
+            jPanel3.revalidate();
+            jPanel3.repaint();
+ 
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to load books.");
+        }
+    }
+
+
+    
+
+     
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -27,21 +127,202 @@ public class adbok extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel1 = new javax.swing.JPanel();
+        jPanel2 = new javax.swing.JPanel();
+        jTextField1 = new javax.swing.JTextField();
+        jPanel4 = new javax.swing.JPanel();
+        jButton1 = new javax.swing.JButton();
+        jToggleButton1 = new javax.swing.JToggleButton();
+        jButton2 = new javax.swing.JButton();
+        jButton3 = new javax.swing.JButton();
+        jButton6 = new javax.swing.JButton();
+        jButton7 = new javax.swing.JButton();
+        jButton8 = new javax.swing.JButton();
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+
+        jPanel1.add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
+
+        jTextField1.setFont(new java.awt.Font("Tahoma", 1, 24)); // NOI18N
+        jTextField1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        jTextField1.setText("WELCOME TO BOOK SECTION");
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
+        jPanel1.add(jTextField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 20, 560, 50));
+
+        jPanel4.setBackground(new java.awt.Color(0, 0, 255));
+        jPanel4.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 3, true));
+        jPanel4.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jButton1.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        jButton1.setText("Users");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 140, 170, 30));
+
+        jToggleButton1.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        jToggleButton1.setText("Settings");
+        jToggleButton1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jToggleButton1MouseClicked(evt);
+            }
+        });
+        jPanel4.add(jToggleButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 630, 140, 30));
+
+        jButton2.setText("Books");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 270, 150, 30));
+
+        jButton3.setText("Sales");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 330, 150, 30));
+
+        jPanel1.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 360, 680));
+
+        jButton6.setText("Add");
+        jButton6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton6ActionPerformed(evt);
+            }
+        });
+        jPanel1.add(jButton6, new org.netbeans.lib.awtextra.AbsoluteConstraints(971, 650, 80, 30));
+
+        jButton7.setText("Delete");
+        jButton7.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton7ActionPerformed(evt);
+            }
+        });
+        jPanel1.add(jButton7, new org.netbeans.lib.awtextra.AbsoluteConstraints(890, 650, 70, 30));
+
+        jButton8.setText("Edit");
+        jButton8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton8ActionPerformed(evt);
+            }
+        });
+        jPanel1.add(jButton8, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 650, 70, 30));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 916, Short.MAX_VALUE)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 1065, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 645, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 691, Short.MAX_VALUE)
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField1ActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+        NewJFrame lp = new NewJFrame();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jToggleButton1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jToggleButton1MouseClicked
+        settingss lp = new settingss();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jToggleButton1MouseClicked
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // TODO add your handling code here:
+        adbok lp = new adbok();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        // TODO add your handling code here:
+        sales lp = new sales();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
+        // TODO add your handling code here:
+         try {
+            String idStr = JOptionPane.showInputDialog(this, "Enter Book ID to delete:");
+            if (idStr == null || idStr.trim().isEmpty()) return;
+ 
+            int id = Integer.parseInt(idStr);
+ 
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to delete this book?",
+                    "Confirm Delete",
+                    JOptionPane.YES_NO_OPTION);
+ 
+            if (confirm == JOptionPane.YES_OPTION) {
+                String sql = "DELETE FROM tbl_books WHERE bo_id=?";
+                new cconfig().addRecord(sql, id);
+                JOptionPane.showMessageDialog(this, "Book deleted successfully!");
+                loadBooks();
+            }
+ 
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to delete book.");
+        }
+    }//GEN-LAST:event_jButton7ActionPerformed
+
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        // TODO add your handling code here:
+                                             
+        odbok addForm = new odbok();
+        addForm.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton6ActionPerformed
+
+    private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
+        // TODO add your handling code here:
+        if (selectedBookId == -1) {
+        JOptionPane.showMessageDialog(this, "Select a book first!");
+        return;
+    }
+ 
+    editb editForm = new editb(selectedBookId);
+    editForm.setVisible(true);
+    this.dispose();
+    }//GEN-LAST:event_jButton8ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -79,5 +360,16 @@ public class adbok extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton6;
+    private javax.swing.JButton jButton7;
+    private javax.swing.JButton jButton8;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel4;
+    private javax.swing.JTextField jTextField1;
+    private javax.swing.JToggleButton jToggleButton1;
     // End of variables declaration//GEN-END:variables
 }

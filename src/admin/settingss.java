@@ -21,6 +21,7 @@ public class settingss extends javax.swing.JFrame {
      * Creates new form settingss
      */
     public settingss() {
+         if (!UserSession.requireLogin(this)) return;
         initComponents();
         loadUserData();
         lockFields();
@@ -138,7 +139,7 @@ public class settingss extends javax.swing.JFrame {
                 jButton4ActionPerformed(evt);
             }
         });
-        jPanel2.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 510, -1, -1));
+        jPanel2.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(720, 490, -1, -1));
 
         jLabel4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/admin/t.png"))); // NOI18N
         jPanel2.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(830, 20, 110, 90));
@@ -152,21 +153,17 @@ public class settingss extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 950, Short.MAX_VALUE)
-            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 950, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 950, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 540, Short.MAX_VALUE)
-            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(layout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 540, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 540, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
 
         pack();
@@ -174,33 +171,35 @@ public class settingss extends javax.swing.JFrame {
  private void lockFields() {
         jTextField2.setEditable(false);
         jTextField3.setEditable(false);
+        jPasswordField1.setEditable(false);
     }
-
+ 
     private void unlockFields() {
         jTextField2.setEditable(true);
         jTextField3.setEditable(true);
+        // password stays non-editable always
     }
-
+ 
     private void loadUserData() {
        if (UserSession.username == null || UserSession.username.isEmpty()) {
         JOptionPane.showMessageDialog(this, "No active session!");
         return;
     }
-
+ 
     try (Connection con = cconfig.connectDB()) {
         // Fetch username, email, and password
         String sql = "SELECT username, email, password FROM tbl_users WHERE username = ?";
         PreparedStatement pst = con.prepareStatement(sql);
         pst.setString(1, UserSession.username);
-
+ 
         ResultSet rs = pst.executeQuery();
-
+ 
         if (rs.next()) {
             jTextField2.setText(rs.getString("username"));
             jTextField3.setText(rs.getString("email"));
-            jPasswordField1.setText(rs.getString("password")); // Show password
+            jPasswordField1.setText("********"); // password is not shown or editable
         }
-
+ 
     } catch (Exception e) {
         JOptionPane.showMessageDialog(this, e.getMessage());
     }
@@ -233,29 +232,27 @@ public class settingss extends javax.swing.JFrame {
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         // TODO add your handling code here:
          try (Connection con = cconfig.connectDB()) {
-        String sql = "UPDATE tbl_users SET username = ?, email = ?, password = ? WHERE username = ?";
+        String sql = "UPDATE tbl_users SET username = ?, email = ? WHERE username = ?";
         PreparedStatement pst = con.prepareStatement(sql);
-
+ 
         String newUsername = jTextField2.getText().trim();
         String newEmail = jTextField3.getText().trim();
-        String newPassword = new String(jPasswordField1.getPassword()).trim(); // Get password safely
         String oldUsername = UserSession.username;
-
+ 
         pst.setString(1, newUsername);
         pst.setString(2, newEmail);
-        pst.setString(3, newPassword);
-        pst.setString(4, oldUsername);
-
+        pst.setString(3, oldUsername);
+ 
         int rowsUpdated = pst.executeUpdate();
-
+ 
         if (rowsUpdated > 0) {
             JOptionPane.showMessageDialog(this, "Profile updated successfully!");
-            UserSession.username = newUsername;  // Update session username
+            UserSession.username = newUsername;
             lockFields();
         } else {
             JOptionPane.showMessageDialog(this, "Update failed. User not found.");
         }
-
+ 
     } catch (Exception e) {
         JOptionPane.showMessageDialog(this, e.getMessage());
     }
@@ -264,13 +261,7 @@ public class settingss extends javax.swing.JFrame {
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         // TODO add your handling code here:
-        UserSession.clear();
-        new mainpage().setVisible(true);
-
-        java.awt.Window win = javax.swing.SwingUtilities.getWindowAncestor(this);
-        if (win != null) {
-            win.dispose();
-        }
+        System.exit(0);
 
     }//GEN-LAST:event_jButton4ActionPerformed
 
