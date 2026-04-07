@@ -20,43 +20,30 @@ import java.sql.ResultSet;
  */
 public class bok extends javax.swing.JFrame {
 
-    private String username; // store logged-in username
+    private String username;
 
-    /**
-     * Constructor to receive username
-     */
     public bok(String username) {
         this.username = username;
         initComponents();
         jScrollPane2.setViewportView(jPanel3);
         loadBooks();
     }
-    
-    
-    
-    /**
-     * Creates new form bok
-     */
+
     public bok() {
-
         if (!UserSession.requireLogin(this)) return;
-
-        // Correct way: get the instance and retrieve username
         this.username = UserSession.username;
-
         initComponents();
         jScrollPane2.setViewportView(jPanel3);
         loadBooks();
     }
 
-      private void loadBooks() {
+    private void loadBooks() {
         jPanel3.removeAll();
         jPanel3.setLayout(new GridLayout(0, 3, 20, 20));
         jPanel3.setBackground(Color.WHITE);
 
         try {
             Connection conn = cconfig.connectDB();
-
             String sql = "SELECT * FROM tbl_books WHERE status='Available'";
             PreparedStatement pst = conn.prepareStatement(sql);
             ResultSet rs = pst.executeQuery();
@@ -82,7 +69,6 @@ public class bok extends javax.swing.JFrame {
 
                 bookPanel.add(picLabel, BorderLayout.CENTER);
 
-                // Click to open borrow page
                 bookPanel.addMouseListener(new java.awt.event.MouseAdapter() {
                     public void mouseClicked(java.awt.event.MouseEvent evt) {
                         openTransaction(bookId);
@@ -95,7 +81,6 @@ public class bok extends javax.swing.JFrame {
             rs.close();
             pst.close();
             conn.close();
-
             jPanel3.revalidate();
             jPanel3.repaint();
 
@@ -105,7 +90,6 @@ public class bok extends javax.swing.JFrame {
         }
     }
 
-     
     private void openTransaction(int bookId) {
         if (username == null) {
             JOptionPane.showMessageDialog(this, "User not logged in!");
@@ -115,7 +99,6 @@ public class bok extends javax.swing.JFrame {
         transactionPage.setVisible(true);
         this.dispose();
     }
-
 
     /**
      * This method is called from within the constructor to initialize the form.

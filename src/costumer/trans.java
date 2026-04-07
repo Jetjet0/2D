@@ -19,21 +19,21 @@ import java.sql.ResultSet;
  * @author USER33
  */
 public class trans extends javax.swing.JFrame {
-    
+
     private int bookId;
     private String username;
- 
+
     public trans(int bookId, String username) {
         if (!UserSession.requireLogin(this)) return;
         this.bookId = bookId;
         this.username = username;
- 
+
         initComponents();
         loadBookDetails(bookId);
- 
-        jTextField7.setText("3");
- 
-        // make book details read only
+
+        jTextField7.setText("3"); // default days
+
+        // make book details read-only
         jTextField2.setEditable(false);
         jTextField3.setEditable(false);
         jTextField4.setEditable(false);
@@ -41,32 +41,29 @@ public class trans extends javax.swing.JFrame {
         jTextField6.setEditable(false);
         jTextField7.setEditable(false);
     }
-   
+
     private void loadBookDetails(int bookId) {
         try {
             Connection conn = cconfig.connectDB();
- 
-            String sql = "SELECT * FROM tbl_books WHERE bo_id=?";
+            String sql = "SELECT * FROM tbl_books WHERE bo_id = ?";
             PreparedStatement pst = conn.prepareStatement(sql);
             pst.setInt(1, bookId);
- 
             ResultSet rs = pst.executeQuery();
- 
+
             if (rs.next()) {
-                jTextField2.setText(rs.getString("book_title")); // use correct column name here
-                jTextField3.setText(String.valueOf(rs.getInt("price")));
-                jTextField4.setText(rs.getString("author"));
-                jTextField5.setText(rs.getString("genre"));
-                jTextField6.setText(String.valueOf(bookId));
+                jTextField2.setText(rs.getString("bo_title"));   // title
+                jTextField3.setText(String.valueOf(rs.getDouble("price"))); // price
+                jTextField4.setText(rs.getString("author"));     // author
+                jTextField5.setText(rs.getString("genre"));      // genre
+                jTextField6.setText(String.valueOf(rs.getInt("bo_id"))); // book ID
             }
- 
+
             rs.close();
             pst.close();
             conn.close();
- 
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to load book details");
+            JOptionPane.showMessageDialog(this, "Error loading book details!");
         }
     }
     /**
@@ -207,38 +204,32 @@ public class trans extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, "Invalid Book Selected!");
                 return;
             }
- 
+
             Connection conn = cconfig.connectDB();
- 
             String sql = "INSERT INTO tbl_pending (bo_id, username, book_title, price, days, status) VALUES (?, ?, ?, ?, ?, ?)";
- 
             PreparedStatement pst = conn.prepareStatement(sql);
- 
+
             pst.setInt(1, bookId);
             pst.setString(2, username);
             pst.setString(3, jTextField2.getText());
-            pst.setInt(4, Integer.parseInt(jTextField3.getText()));
- 
-            int days = Integer.parseInt(jTextField7.getText().trim());
-            pst.setInt(5, days);
- 
+            pst.setDouble(4, Double.parseDouble(jTextField3.getText()));
+            pst.setInt(5, Integer.parseInt(jTextField7.getText().trim()));
             pst.setString(6, "Pending");
- 
+
             pst.executeUpdate();
- 
             pst.close();
             conn.close();
- 
+
             JOptionPane.showMessageDialog(this, "Borrow request sent to Admin!");
- 
+
             bok booksPage = new bok(username);
             booksPage.setVisible(true);
             this.dispose();
- 
+
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Borrow request failed!");
-        }    
+        }
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
