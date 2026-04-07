@@ -24,89 +24,86 @@ private int selectedBookId = -1;
      */
       public adbok() {
         if (!UserSession.requireLogin(this)) return;
- 
+
         initComponents();
- 
+
         jPanel3 = new JPanel();
         jPanel3.setLayout(new GridLayout(0, 2, 30, 30));
         jPanel3.setBackground(Color.WHITE);
- 
+
         JScrollPane scrollPane = new JScrollPane(jPanel3);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
- 
+
         jPanel1.add(scrollPane,
                 new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 90, 680, 550));
- 
+
         loadBooks();
     }
-     private void loadBooks() {
-     try {
- 
+
+    private void loadBooks() {
+        try {
             jPanel3.removeAll();
- 
+
             Connection conn = cconfig.connectDB();
             PreparedStatement pst = conn.prepareStatement("SELECT * FROM tbl_books");
             ResultSet rs = pst.executeQuery();
- 
+
             while (rs.next()) {
- 
+
                 int id = rs.getInt("bo_id");
-                String title = rs.getString("title");
+                String title = rs.getString("bo_title"); // ✅ FIXED
                 int price = rs.getInt("price");
                 byte[] imageBytes = rs.getBytes("picture");
- 
+
                 JPanel bookPanel = new JPanel(new BorderLayout());
                 bookPanel.setPreferredSize(new Dimension(260, 430));
                 bookPanel.setBackground(Color.WHITE);
                 bookPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
- 
+
                 JLabel picLabel = new JLabel();
                 picLabel.setHorizontalAlignment(JLabel.CENTER);
                 picLabel.setPreferredSize(new Dimension(250, 375));
- 
+
                 if (imageBytes != null) {
-                    picLabel.setIcon(new ImageIcon(imageBytes));
+                    ImageIcon icon = new ImageIcon(imageBytes);
+                    Image img = icon.getImage().getScaledInstance(250, 375, Image.SCALE_SMOOTH);
+                    picLabel.setIcon(new ImageIcon(img));
                 }
- 
+
                 JLabel textLabel = new JLabel(
-                        "<html><center>"
-                                + title +
-                                "<br>₱" + price +
-                                "</center></html>",
+                        "<html><center>" + title + "<br>₱" + price + "</center></html>",
                         JLabel.CENTER
                 );
- 
+
                 textLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
- 
+
                 bookPanel.add(picLabel, BorderLayout.CENTER);
                 bookPanel.add(textLabel, BorderLayout.SOUTH);
- 
-                // ✅ CLICK TO SELECT
+
+                // SELECT BOOK
                 bookPanel.addMouseListener(new java.awt.event.MouseAdapter() {
                     public void mouseClicked(java.awt.event.MouseEvent evt) {
- 
+
                         selectedBookId = id;
- 
+
                         for (Component comp : jPanel3.getComponents()) {
                             ((JPanel) comp).setBorder(
                                     BorderFactory.createLineBorder(Color.GRAY));
                         }
- 
+
                         bookPanel.setBorder(
                                 BorderFactory.createLineBorder(Color.BLUE, 3));
                     }
                 });
- 
+
                 jPanel3.add(bookPanel);
             }
- 
-            rs.close();
-            pst.close();
+
             conn.close();
- 
+
             jPanel3.revalidate();
             jPanel3.repaint();
- 
+
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Failed to load books.");
@@ -280,27 +277,34 @@ private int selectedBookId = -1;
 
     private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
         // TODO add your handling code here:
-         try {
-            String idStr = JOptionPane.showInputDialog(this, "Enter Book ID to delete:");
-            if (idStr == null || idStr.trim().isEmpty()) return;
- 
-            int id = Integer.parseInt(idStr);
- 
-            int confirm = JOptionPane.showConfirmDialog(this,
-                    "Are you sure you want to delete this book?",
-                    "Confirm Delete",
-                    JOptionPane.YES_NO_OPTION);
- 
-            if (confirm == JOptionPane.YES_OPTION) {
-                String sql = "DELETE FROM tbl_books WHERE bo_id=?";
-                new cconfig().addRecord(sql, id);
-                JOptionPane.showMessageDialog(this, "Book deleted successfully!");
+         if (selectedBookId == -1) {
+            JOptionPane.showMessageDialog(this, "Select a book first!");
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Delete selected book?",
+                "Confirm",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                Connection conn = cconfig.connectDB();
+                PreparedStatement pst = conn.prepareStatement(
+                        "DELETE FROM tbl_books WHERE bo_id=?");
+                pst.setInt(1, selectedBookId);
+                pst.executeUpdate();
+
+                conn.close();
+
+                JOptionPane.showMessageDialog(this, "Deleted successfully!");
                 loadBooks();
+                selectedBookId = -1;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Delete failed.");
             }
- 
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to delete book.");
         }
     }//GEN-LAST:event_jButton7ActionPerformed
 
@@ -315,13 +319,14 @@ private int selectedBookId = -1;
     private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
         // TODO add your handling code here:
         if (selectedBookId == -1) {
-        JOptionPane.showMessageDialog(this, "Select a book first!");
-        return;
-    }
- 
-    editb editForm = new editb(selectedBookId);
-    editForm.setVisible(true);
-    this.dispose();
+            JOptionPane.showMessageDialog(this, "Select a book first!");
+            return;
+        }
+
+        editb editForm = new editb(selectedBookId);
+        editForm.setVisible(true);
+        this.dispose();
+    
     }//GEN-LAST:event_jButton8ActionPerformed
 
     /**

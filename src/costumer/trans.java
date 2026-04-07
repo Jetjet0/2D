@@ -4,13 +4,15 @@
  * and open the template in the editor.
  */
 package costumer;
- 
+
 import config.UserSession;
 import config.cconfig;
+
 import javax.swing.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+
 
 /**
  *
@@ -39,7 +41,8 @@ public class trans extends javax.swing.JFrame {
         jTextField6.setEditable(false);
         jTextField7.setEditable(false);
     }
-   private void loadBookDetails(int bookId) {
+   
+    private void loadBookDetails(int bookId) {
         try {
             Connection conn = cconfig.connectDB();
  
@@ -50,8 +53,7 @@ public class trans extends javax.swing.JFrame {
             ResultSet rs = pst.executeQuery();
  
             if (rs.next()) {
-                // Use bo_title here consistently with your DB schema
-                jTextField2.setText(rs.getString("title"));
+                jTextField2.setText(rs.getString("book_title")); // use correct column name here
                 jTextField3.setText(String.valueOf(rs.getInt("price")));
                 jTextField4.setText(rs.getString("author"));
                 jTextField5.setText(rs.getString("genre"));
@@ -208,13 +210,13 @@ public class trans extends javax.swing.JFrame {
  
             Connection conn = cconfig.connectDB();
  
-            String sql = "INSERT INTO tbl_pending (b_id, username, book_title, price, days, status) VALUES (?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO tbl_pending (bo_id, username, book_title, price, days, status) VALUES (?, ?, ?, ?, ?, ?)";
  
             PreparedStatement pst = conn.prepareStatement(sql);
  
             pst.setInt(1, bookId);
             pst.setString(2, username);
-            pst.setString(3, jTextField2.getText());  // This is bo_title from your book details
+            pst.setString(3, jTextField2.getText());
             pst.setInt(4, Integer.parseInt(jTextField3.getText()));
  
             int days = Integer.parseInt(jTextField7.getText().trim());
@@ -236,8 +238,7 @@ public class trans extends javax.swing.JFrame {
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Borrow request failed!");
-        }
-              
+        }    
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed

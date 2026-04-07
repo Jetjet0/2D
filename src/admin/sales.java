@@ -3,94 +3,167 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package admin; 
- 
-import config.UserSession;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import config.cconfig;
-import net.proteanit.sql.DbUtils;
-import javax.swing.JOptionPane;
+package admin;
+
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-/**
- *
- * @author USER33
- */
+import java.sql.*;
+import java.awt.Desktop;
+import java.io.FileOutputStream;
+import config.UserSession;
+import config.cconfig;
+
 public class sales extends javax.swing.JFrame {
 
-    /**
-     * Creates new form sales
-     */
     public sales() {
-         if (!UserSession.requireLogin(this)) return;
+        if (!UserSession.requireLogin(this)) return;
+
         initComponents();
+
+        // Correct headers
+        jTable1.setModel(new DefaultTableModel(
+                new Object[][]{},
+                new String[]{"ID", "Username", "Book Title", "Price", "Days", "Status"}
+        ));
+
         loadBorrowedBooks();
- 
-        jButton4.addActionListener(e -> {
-            int selectedRow = jTable1.getSelectedRow();
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(this, "Please select a record to approve.");
-                return;
-            }
-            Object idObj = jTable1.getValueAt(selectedRow, 0);
-            if (idObj == null) {
-                JOptionPane.showMessageDialog(this, "Invalid selection.");
-                return;
-            }
-            int borrowId = Integer.parseInt(idObj.toString());
-            int confirm = JOptionPane.showConfirmDialog(this,
-                    "Approve this borrow request?", "Confirm",
-                    JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
-                try {
-                    Connection conn = cconfig.connectDB();
-                    PreparedStatement pst = conn.prepareStatement(
-                            "UPDATE tbl_pending SET status='Approved' WHERE b_id=?");
-                    pst.setInt(1, borrowId);
-                    pst.executeUpdate();
-                    conn.close();
-                    JOptionPane.showMessageDialog(this, "Record approved successfully!");
-                    loadBorrowedBooks();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Failed to approve record.");
-                }
-            }
-        });
+
+        jButton4.addActionListener(e -> approveRecord());
     }
-     private void loadBorrowedBooks() {
-        try {
-            Connection conn = cconfig.connectDB();
-            String sql = "SELECT b_id, username, book_title, price, days, status FROM tbl_pending";
+
+    private void loadBorrowedBooks() {
+        try (Connection conn = cconfig.connectDB()) {
+            String sql = "SELECT p_id, username, book_title, price, days, status FROM tbl_pending";
             PreparedStatement pst = conn.prepareStatement(sql);
             ResultSet rs = pst.executeQuery();
- 
-            // clear existing rows
+
             DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
             model.setRowCount(0);
- 
+
             while (rs.next()) {
-                int bookId = rs.getInt("b_id");
+                int id = rs.getInt("p_id");
                 String username = rs.getString("username");
                 String title = rs.getString("book_title");
                 int price = rs.getInt("price");
                 int days = rs.getInt("days");
                 String status = rs.getString("status");
- 
-                model.addRow(new Object[]{bookId, username, title, price, days, status});
+
+                model.addRow(new Object[]{id, username, title, price, days, status});
             }
- 
-            rs.close();
-            pst.close();
-            conn.close();
- 
+
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to load borrowed books!");
+            JOptionPane.showMessageDialog(this, "Failed to load records.");
         }
     }
+
+    // PDF Receipt generation method
+    private void generateReceipt(int id, String username, String title, int price, int days) {
+        try {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Save Receipt");
+            chooser.setSelectedFile(new java.io.File("Receipt_" + id + ".pdf"));
+            int userSelection = chooser.showSaveDialog(this);
+            if (userSelection != JFileChooser.APPROVE_OPTION) return;
+
+            String path = chooser.getSelectedFile().getAbsolutePath();
+            Document document = new Document(PageSize.A5, 20, 20, 20, 20);
+            PdfWriter.getInstance(document, new FileOutputStream(path));
+            document.open();
+
+            Font storeFont = new Font(Font.FontFamily.HELVETICA, 20, Font.BOLD, BaseColor.BLUE);
+            Paragraph store = new Paragraph("LIBRARY MANAGEMENT\n", storeFont);
+            store.setAlignment(Element.ALIGN_CENTER);
+            document.add(store);
+
+            Paragraph date = new Paragraph("Date: " + java.time.LocalDate.now() +
+                    "    Time: " + java.time.LocalTime.now().withNano(0));
+            date.setAlignment(Element.ALIGN_CENTER);
+            document.add(date);
+
+            document.add(new Paragraph("\n-----------------------------------\n"));
+
+            PdfPTable table = new PdfPTable(2);
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(10f);
+            table.setSpacingAfter(10f);
+
+            Font headFont = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD);
+            PdfPCell cell1 = new PdfPCell(new Phrase("Item", headFont));
+            PdfPCell cell2 = new PdfPCell(new Phrase("Details", headFont));
+            cell1.setBorder(Rectangle.NO_BORDER);
+            cell2.setBorder(Rectangle.NO_BORDER);
+            table.addCell(cell1);
+            table.addCell(cell2);
+
+            table.addCell("Receipt ID"); table.addCell(String.valueOf(id));
+            table.addCell("Username"); table.addCell(username);
+            table.addCell("Book Title"); table.addCell(title);
+            table.addCell("Price per Day"); table.addCell("₱" + price);
+            table.addCell("Days"); table.addCell(String.valueOf(days));
+            table.addCell("Total"); table.addCell("₱" + (price * days));
+
+            document.add(table);
+            document.add(new Paragraph("-----------------------------------\n"));
+
+            Paragraph thanks = new Paragraph("Thank you for using LIBRARY MANAGEMENT!");
+            thanks.setAlignment(Element.ALIGN_CENTER);
+            document.add(thanks);
+
+            document.close();
+
+            // Auto-open PDF
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().open(new java.io.File(path));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to generate receipt.");
+        }
+    }
+
+    // Approve button
+    private void approveRecord() {
+        int row = jTable1.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Select a record first!");
+            return;
+        }
+
+        int id = Integer.parseInt(jTable1.getValueAt(row, 0).toString());
+        String username = jTable1.getValueAt(row, 1).toString();
+        String bookTitle = jTable1.getValueAt(row, 2).toString();
+        int price = Integer.parseInt(jTable1.getValueAt(row, 3).toString());
+        int days = Integer.parseInt(jTable1.getValueAt(row, 4).toString());
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Approve this record?",
+                "Confirm",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            try (Connection conn = cconfig.connectDB()) {
+                String sql = "UPDATE tbl_pending SET status='Approved' WHERE p_id=?";
+                PreparedStatement pst = conn.prepareStatement(sql);
+                pst.setInt(1, id);
+                pst.executeUpdate();
+
+                JOptionPane.showMessageDialog(this, "Approved!");
+                loadBorrowedBooks();
+
+                // Generate and auto-open PDF receipt
+                generateReceipt(id, username, bookTitle, price, days);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Approval or receipt generation failed.");
+            }
+        }
+    }
+
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -113,6 +186,7 @@ public class sales extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
         jButton4 = new javax.swing.JButton();
+        jButton5 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -171,7 +245,7 @@ public class sales extends javax.swing.JFrame {
         });
         jPanel4.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 270, 150, 30));
 
-        jButton3.setText("Book Borrowed");
+        jButton3.setText("Sales");
         jButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton3ActionPerformed(evt);
@@ -201,6 +275,15 @@ public class sales extends javax.swing.JFrame {
         jButton4.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
         jButton4.setText("Approve");
         jPanel3.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(520, 320, -1, -1));
+
+        jButton5.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        jButton5.setText("Decline");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
+        jPanel3.add(jButton5, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 320, 100, 30));
 
         jPanel1.add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(390, 90, 640, 360));
 
@@ -251,6 +334,44 @@ public class sales extends javax.swing.JFrame {
         this.dispose();
     }//GEN-LAST:event_jButton3ActionPerformed
 
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        // TODO add your handling code here:
+         int row = jTable1.getSelectedRow();
+
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Select a record first!");
+            return;
+        }
+
+        int id = Integer.parseInt(jTable1.getValueAt(row, 0).toString());
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Decline this record?",
+                "Confirm",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                Connection conn = cconfig.connectDB();
+
+                String sql = "UPDATE tbl_pending SET status='Declined' WHERE p_id=?";
+                PreparedStatement pst = conn.prepareStatement(sql);
+                pst.setInt(1, id);
+                pst.executeUpdate();
+
+                conn.close();
+
+                JOptionPane.showMessageDialog(this, "Declined!");
+                loadBorrowedBooks();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Decline failed.");
+            }
+        }
+    
+    }//GEN-LAST:event_jButton5ActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -291,6 +412,7 @@ public class sales extends javax.swing.JFrame {
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
