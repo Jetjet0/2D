@@ -34,30 +34,38 @@ public class sales extends javax.swing.JFrame {
     }
 
     private void loadBorrowedBooks() {
-        try (Connection conn = cconfig.connectDB()) {
-            String sql = "SELECT p_id, username, book_title, price, days, status FROM tbl_pending";
-            PreparedStatement pst = conn.prepareStatement(sql);
-            ResultSet rs = pst.executeQuery();
+    try (Connection conn = cconfig.connectDB()) {
+        // Order by status: Approved first, Pending second, Declined last
+        String sql = "SELECT p_id, username, book_title, price, days, status " +
+                     "FROM tbl_pending " +
+                     "ORDER BY CASE status " +
+                     "WHEN 'Approved' THEN 1 " +
+                     "WHEN 'Pending' THEN 2 " +
+                     "WHEN 'Declined' THEN 3 " +
+                     "ELSE 4 END, p_id ASC";
 
-            DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
-            model.setRowCount(0);
+        PreparedStatement pst = conn.prepareStatement(sql);
+        ResultSet rs = pst.executeQuery();
 
-            while (rs.next()) {
-                int id = rs.getInt("p_id");
-                String username = rs.getString("username");
-                String title = rs.getString("book_title");
-                int price = rs.getInt("price");
-                int days = rs.getInt("days");
-                String status = rs.getString("status");
+        DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
+        model.setRowCount(0); // clear table
 
-                model.addRow(new Object[]{id, username, title, price, days, status});
-            }
+        while (rs.next()) {
+            int id = rs.getInt("p_id");
+            String username = rs.getString("username");
+            String title = rs.getString("book_title");
+            int price = rs.getInt("price");
+            int days = rs.getInt("days");
+            String status = rs.getString("status");
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to load records.");
+            model.addRow(new Object[]{id, username, title, price, days, status});
         }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Failed to load records.");
     }
+}
 
     // PDF Receipt generation method
     private void generateReceipt(int id, String username, String title, int price, int days) {

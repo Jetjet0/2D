@@ -121,7 +121,12 @@ public class setc extends javax.swing.JFrame {
         });
         jPanel3.add(jButton6, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 270, 150, 30));
 
-        jButton1.setText("Return");
+        jButton1.setText("Transaction");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
         jPanel3.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 340, 150, 30));
 
         jPanel2.add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 340, 550));
@@ -286,6 +291,13 @@ public class setc extends javax.swing.JFrame {
         lp.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_jButton6ActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+        rturn lp = new rturn();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
      * @param args the command line arguments

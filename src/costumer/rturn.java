@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 package costumer;
- 
+
 import config.UserSession;
 import config.cconfig;
 import javax.swing.*;
@@ -18,72 +18,71 @@ import java.sql.ResultSet;
  * @author USER33
  */
 public class rturn extends javax.swing.JFrame {
- 
+
     private JPanel bookGrid;
- 
-    /**
-     * Creates new form rturn
-     */
+
     public rturn() {
         if (!UserSession.requireLogin(this)) return;
         initComponents();
- 
-        // Build a scrollable book grid and place it in the content area
+
+        // Build a scrollable book grid
         bookGrid = new JPanel();
         bookGrid.setLayout(new GridLayout(0, 3, 20, 20));
         bookGrid.setBackground(Color.WHITE);
- 
+
         JScrollPane scrollPane = new JScrollPane(bookGrid);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.setBounds(380, 90, 680, 550);
-        jPanel1.add(scrollPane);
- 
+
+        // Add to jPanel1 with AbsoluteConstraints
+        jPanel1.add(scrollPane, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 90, 680, 550));
+
         loadBorrowedBooks();
     }
- 
+
     private void loadBorrowedBooks() {
         bookGrid.removeAll();
- 
+
         try {
             Connection conn = cconfig.connectDB();
-            String sql = "SELECT b_id, book_title, price, days, status FROM tbl_pending " +
-                         "WHERE username = ? AND status = 'Approved'";
+            String sql = "SELECT p_id, bo_id, book_title, price, days, status " +
+                         "FROM tbl_pending WHERE username = ? AND status = 'Approved'";
             PreparedStatement pst = conn.prepareStatement(sql);
             pst.setString(1, UserSession.username);
             ResultSet rs = pst.executeQuery();
- 
+
             boolean hasBooks = false;
- 
+
             while (rs.next()) {
                 hasBooks = true;
-                int borrowId   = rs.getInt("b_id");
+                int borrowId   = rs.getInt("p_id");      // primary key in tbl_pending
+                int bookId     = rs.getInt("bo_id");     // actual book ID
                 String title   = rs.getString("book_title");
                 int price      = rs.getInt("price");
                 int days       = rs.getInt("days");
                 String status  = rs.getString("status");
- 
-                // Fetch the book cover from tbl_books using b_id
+
+                // Fetch book cover from tbl_books
                 byte[] imageBytes = null;
                 try {
                     Connection conn2 = cconfig.connectDB();
                     PreparedStatement pst2 = conn2.prepareStatement(
                             "SELECT picture FROM tbl_books WHERE bo_id = ?");
-                    pst2.setInt(1, borrowId);
+                    pst2.setInt(1, bookId);
                     ResultSet rs2 = pst2.executeQuery();
                     if (rs2.next()) imageBytes = rs2.getBytes("picture");
                     rs2.close(); pst2.close(); conn2.close();
                 } catch (Exception ignored) {}
- 
+
                 JPanel card = new JPanel(new BorderLayout());
                 card.setPreferredSize(new Dimension(200, 330));
                 card.setBackground(Color.WHITE);
                 card.setBorder(BorderFactory.createLineBorder(Color.GRAY));
                 card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
- 
+
                 JLabel picLabel = new JLabel();
                 picLabel.setHorizontalAlignment(JLabel.CENTER);
                 picLabel.setPreferredSize(new Dimension(190, 250));
- 
+
                 if (imageBytes != null && imageBytes.length > 0) {
                     ImageIcon icon = new ImageIcon(imageBytes);
                     Image img = icon.getImage().getScaledInstance(190, 250, Image.SCALE_SMOOTH);
@@ -91,7 +90,7 @@ public class rturn extends javax.swing.JFrame {
                 } else {
                     picLabel.setText("No Image");
                 }
- 
+
                 JLabel infoLabel = new JLabel(
                     "<html><center>" + title +
                     "<br>₱" + price +
@@ -99,11 +98,11 @@ public class rturn extends javax.swing.JFrame {
                     "<br><font color='green'>" + status + "</font>" +
                     "</center></html>", JLabel.CENTER);
                 infoLabel.setFont(new Font("Tahoma", Font.BOLD, 12));
- 
+
                 card.add(picLabel, BorderLayout.CENTER);
                 card.add(infoLabel, BorderLayout.SOUTH);
- 
-                // Click → confirm return
+
+                // Click to confirm return
                 card.addMouseListener(new java.awt.event.MouseAdapter() {
                     public void mouseClicked(java.awt.event.MouseEvent evt) {
                         int confirm = JOptionPane.showConfirmDialog(
@@ -111,56 +110,57 @@ public class rturn extends javax.swing.JFrame {
                                 "Return \"" + title + "\"?",
                                 "Return Book",
                                 JOptionPane.YES_NO_OPTION);
- 
+
                         if (confirm == JOptionPane.YES_OPTION) {
-                            returnBook(borrowId, title);
+                            returnBook(borrowId, bookId, title);
                         }
                     }
                 });
- 
+
                 bookGrid.add(card);
             }
- 
+
             if (!hasBooks) {
                 JLabel empty = new JLabel("No approved borrowed books found.", JLabel.CENTER);
                 empty.setFont(new Font("Tahoma", Font.PLAIN, 16));
                 bookGrid.add(empty);
             }
- 
-            rs.close(); pst.close(); conn.close();
- 
+
+            rs.close();
+            pst.close();
+            conn.close();
+
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Failed to load borrowed books!");
         }
- 
+
         bookGrid.revalidate();
         bookGrid.repaint();
     }
- 
-    private void returnBook(int borrowId, String title) {
+
+    private void returnBook(int borrowId, int bookId, String title) {
         try {
             Connection conn = cconfig.connectDB();
- 
-            // Remove from tbl_pending
+
+            // Delete from tbl_pending using p_id
             PreparedStatement pst = conn.prepareStatement(
-                    "DELETE FROM tbl_pending WHERE b_id = ? AND username = ?");
+                    "DELETE FROM tbl_pending WHERE p_id = ?");
             pst.setInt(1, borrowId);
-            pst.setString(2, UserSession.username);
             pst.executeUpdate();
- 
-            // Set book status back to Available
+
+            // Update book status to Available
             PreparedStatement pst2 = conn.prepareStatement(
                     "UPDATE tbl_books SET status = 'Available' WHERE bo_id = ?");
-            pst2.setInt(1, borrowId);
+            pst2.setInt(1, bookId);
             pst2.executeUpdate();
- 
+
             conn.close();
- 
+
             JOptionPane.showMessageDialog(this,
                     "\"" + title + "\" returned successfully!");
             loadBorrowedBooks();
- 
+
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Failed to return book.");
@@ -232,7 +232,12 @@ public class rturn extends javax.swing.JFrame {
         });
         jPanel4.add(jButton2, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 270, 150, 30));
 
-        jButton1.setText("Return");
+        jButton1.setText("Transaction");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
         jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 340, 150, 30));
 
         jPanel1.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 360, 680));
@@ -269,6 +274,13 @@ public class rturn extends javax.swing.JFrame {
         lp.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+        rturn lp = new rturn();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
      * @param args the command line arguments

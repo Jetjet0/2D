@@ -97,6 +97,11 @@ public class dashc extends javax.swing.JFrame {
 
         jButton3.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
         jButton3.setText("Transaction");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
         jPanel4.add(jButton3, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 340, 170, 40));
 
         jPanel1.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 360, 680));
@@ -144,6 +149,13 @@ public class dashc extends javax.swing.JFrame {
         lp.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_jToggleButton1ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        // TODO add your handling code here:
+        rturn lp = new rturn();
+        lp.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton3ActionPerformed
 
     /**
      * @param args the command line arguments
